@@ -5,6 +5,7 @@ Title: Various Plotting Functions
 Author: Degui Zhi
 Maintainer: Huan ZHONG <zhdorothy5@gmail.com>
 Imports: grDevices, graphics, stats, utils
+Depends: plotrix, coxme, kinship2, nlme, MASS
 Description: Methylation Imputation
 License: No
 NeedsCompilation: no
