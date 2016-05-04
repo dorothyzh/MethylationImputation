@@ -1,10 +1,40 @@
+
 # M=log2(Beta/(1-Beta))
 
 # library(MVN)
 library(MASS)
-library(wateRmelon)
 library(MetImpute)
+library(wateRmelon)
 
+
+###############################################################################################
+######################################------------functions
+M2Beta <-
+  function (M) 
+  {
+    return((2^M)/(2^M + 1))
+  }
+
+Beta2M <-
+  function (B) 
+  {
+    return(log2(B/(1 - B)))
+  }
+
+Beta_M <- function(data,...){
+  data <- as.matrix(data)
+  id <- which(is.na(as.vector(data)))
+  Range <- range(as.vector(data)[-id])
+  if(Range[1]<0 || Range[2]>1)stop("The range of values of input dataset musr be between 0 and 1 !")
+  Res <- log(data/(1-data))
+  # Res[Res==-Inf] = 
+  return(Res)
+}
+####
+
+
+###############################################################################################
+######################################-----------------simulation
 n = 1000
 n.seq = 100
 m = 200
@@ -22,6 +52,8 @@ M <- mvrnorm(m, mu = rep(0, nmz), Sigma = diag(nmz)*var_a)  ####200samples
 
 M <- data.frame(M)
 colnames(M)=as.character(1:n)
+row.names(M)=as.character(68606653:(68606652+nrow(M)))
+dim(M)
 
 seq<-M[order(sample(1:n, n.seq)), ] ###sequencing
 dim(seq) # 100 1000
@@ -34,15 +66,17 @@ dim(array) #200  20
 noise1=rnorm(dim(seq)[1]*dim(seq)[2], mean = 0, sd = 1) ##n observations
 seq1=seq+Epsilon1*noise1   #####add random noise
 
-par(mfrow=c(2,1))
+#par(mfrow=c(2,1))
+#View(seq)
+#View(seq1)
 
-seq2=m2beta(seq1)     #####convert M-value to beta value
+seq2=M2Beta(seq1)     #####convert M-value to beta value
 
 ####microarray
 noise2=rnorm(dim(array)[1]*dim(array)[2], mean = 0, sd = 1) ##n observations
 array1=array+Epsilon2*noise2
 
-array2=m2beta(array1) ####m-value to beta value
+array2=M2Beta(array1) ####m-value to beta value
 
 array3=s*array2+t  ###make the scale of array the same with sequencing, 0.9<s<1.1, -0.1<b<0.1
 
@@ -51,17 +85,26 @@ dat1=as.data.frame(seq2)
 dim(dat1)
 dat2=as.data.frame(array3)
 dim(dat2)
+
 qc_frac = 1-5/dim(dat2)[2]
 
-seq_impute <- MetIm(sequence = dat1, microarray = dat2, lambda=0.3, cut=10, cvfold=0, use.mvalue = F, qc_frac = qc_frac)
+#seq_impute <- MetIm(sequence = dat1, microarray = dat2, lambda=0.3, cut=10, cvfold=0, use.mvalue = F, qc_frac = qc_frac)
+seq_impute <- MetIm(sequence = t(dat1), microarray = t(dat2), lambda=0.3, cut=10, cvfold=0, use.mvalue = F, qc_frac = qc_frac)
 
-dim(seq_impute)
+dim(seq_impute)  ##1000  200
 
-actual=seq2
+actual=M
 predicted=seq_impute
 se(actual, predicted)  #####compare(M,M2) ####using element-wise squared error.
 
-# element-wise difference
-diff <- seq_impute-as.matrix(M)
-total.se <- sum(sum(diff^2))
 
+# element-wise difference
+diff <- seq_impute-t(as.matrix(M))
+total.se <- sum(sum(diff^2),na.rm=T)
+total.se
+
+par(mfrow=c(4,1))
+image(as.matrix(M))
+image(as.matrix(dat1))
+image(as.matrix(dat2))
+image(seq_impute)
