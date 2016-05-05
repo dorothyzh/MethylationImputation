@@ -4,7 +4,7 @@
 # library(MVN)
 library(MASS)
 library(MetImpute)
-library(wateRmelon)
+# library(wateRmelon)
 
 
 ###############################################################################################
@@ -49,17 +49,20 @@ t=0.05
 
 nmz = n #number of CpGs, here e.g. 1000
 M <- mvrnorm(m, mu = rep(0, nmz), Sigma = diag(nmz)*var_a)  ####200samples
+M=t(M)
 
 M <- data.frame(M)
-colnames(M)=as.character(1:n)
-row.names(M)=as.character(68606653:(68606652+nrow(M)))
+rownames(M)=as.character(1:n)
+colnames(M)=as.character(68606653:(68606652+ncol(M)))
+# M <- data.frame(M)
+
 dim(M)
 
-seq<-M[order(sample(1:n, n.seq)), ] ###sequencing
-dim(seq) # 100 1000
+seq<-M[(sample(1:n, n.seq)), ] ###sequencing
+dim(seq) # 100 200
 
-array<-M[, order(sample(1:m, m.array))]  ###array    200中20 90% 
-dim(array) #200  20
+array<-M[, (sample(1:m, m.array))]  ###array    200中20 90% 
+dim(array) #1000  20
 
 
 ####sequencing
@@ -81,15 +84,15 @@ array2=M2Beta(array1) ####m-value to beta value
 array3=s*array2+t  ###make the scale of array the same with sequencing, 0.9<s<1.1, -0.1<b<0.1
 
 #####see results
-dat1=as.data.frame(seq2)
-dim(dat1)
-dat2=as.data.frame(array3)
+dat2=as.data.frame(seq2)
 dim(dat2)
+dat1=as.data.frame(array3)
+dim(dat1)
 
-qc_frac = 1-5/dim(dat2)[2]
+qc_frac = 1-5/dim(dat1)[1]
 
-#seq_impute <- MetIm(sequence = dat1, microarray = dat2, lambda=0.3, cut=10, cvfold=0, use.mvalue = F, qc_frac = qc_frac)
-seq_impute <- MetIm(sequence = t(dat1), microarray = t(dat2), lambda=0.3, cut=10, cvfold=0, use.mvalue = F, qc_frac = qc_frac)
+seq_impute <- MetIm(sequence = dat2, microarray = dat1, lambda=0.3, cut=10, cvfold=0, use.mvalue = F, qc_frac = qc_frac)
+# seq_imputet <- MetIm(sequence = t(dat1), microarray = t(dat2), lambda=0.3, cut=10, cvfold=0, use.mvalue = F, qc_frac = qc_frac)
 
 dim(seq_impute)  ##1000  200
 
@@ -99,11 +102,11 @@ se(actual, predicted)  #####compare(M,M2) ####using element-wise squared error.
 
 
 # element-wise difference
-diff <- seq_impute-t(as.matrix(M))
-total.se <- sum(sum(diff^2),na.rm=T)
+diff <- seq_impute-(as.matrix(M))
+total.se <- sum(sum(diff^2,na.rm=T),na.rm=T)
 total.se
 
-par(mfrow=c(4,1))
+par(mfrow=c(2,2))
 image(as.matrix(M))
 image(as.matrix(dat1))
 image(as.matrix(dat2))

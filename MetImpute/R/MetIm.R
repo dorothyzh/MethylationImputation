@@ -68,8 +68,8 @@ MetIm <- function(sequence, microarray = NULL ,lambda = NULL, use.mvalue = NULL,
     C_star[id1.row,id1.col] <- as.matrix(C)
     D_star[id2.row,id2.col] <- as.matrix(D)
     
-    # par(mfrow=c(2,2))
-    # image(C); image(C_star); image(D); image(D_star)
+    par(mfrow=c(2,2))
+    image(C); image(C_star); image(D); image(D_star)
     
     # (2) Sequence to Array transformation
     # Mapping the sequence and array data by using sample linear model
