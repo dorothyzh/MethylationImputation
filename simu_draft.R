@@ -35,21 +35,28 @@ Beta_M <- function(data,...){
 
 ###############################################################################################
 ######################################-----------------simulation
-n = 1000
-n.seq = 100
+data(dat1)
+data(dat2)
+#covariance=cov(dat2,use="pairwise.complete.obs") ###--work
+#covariance=cov(dat2,use="everything") ###work
+covariance=cov(dat2,use="complete.obs")  #######work, maybe use this one 
+#covariance=cov(dat2,use="na.or.complete") ###work 
+dim(covariance)
+
+
+n = dim(covariance)[1]
+n.seq = 0.1*n
 m = 200
-m.array = 20 
+m.array = 0.1*m
 Epsilon1=.1
 Epsilon2=.1
-var_a = 0.5 #variance 0.5.
 s=1.05
 t=0.05
+#M <- mvrnorm(m, mu = rep(0, n), Sigma = diag(n)*var_a) ####can run
+M <- mvrnorm(m, mu = rep(0, n), Sigma = covariance) 
 
-
-
-nmz = n #number of CpGs, here e.g. 1000
-M <- mvrnorm(m, mu = rep(0, nmz), Sigma = diag(nmz)*var_a)  ####200samples
 M=t(M)
+dim(M)  # 992 200
 
 M <- data.frame(M)
 rownames(M)=as.character(1:n)
@@ -59,13 +66,14 @@ colnames(M)=as.character(68606653:(68606652+ncol(M)))
 dim(M)
 
 seq<-M[(sample(1:n, n.seq)), ] ###sequencing
-dim(seq) # 100 200
+dim(seq) # 99 200
 
 array<-M[, (sample(1:m, m.array))]  ###array    200中20 90% 
-dim(array) #1000  20
+dim(array) #992  20
 
-
-####sequencing
+################################################
+########----------sequencing-------------#######
+################################################
 noise1=rnorm(dim(seq)[1]*dim(seq)[2], mean = 0, sd = 1) ##n observations
 seq1=seq+Epsilon1*noise1   #####add random noise
 
@@ -75,7 +83,9 @@ seq1=seq+Epsilon1*noise1   #####add random noise
 
 seq2=M2Beta(seq1)     #####convert M-value to beta value
 
-####microarray
+##################################################
+##########---------microarray-----------##########
+##################################################
 noise2=rnorm(dim(array)[1]*dim(array)[2], mean = 0, sd = 1) ##n observations
 array1=array+Epsilon2*noise2
 
@@ -83,7 +93,8 @@ array2=M2Beta(array1) ####m-value to beta value
 
 array3=s*array2+t  ###make the scale of array the same with sequencing, 0.9<s<1.1, -0.1<b<0.1
 
-#####see results
+###############################################################################################
+######################################-----------------see results
 dat2=as.data.frame(seq2)
 dim(dat2)
 dat1=as.data.frame(array3)
@@ -94,20 +105,54 @@ qc_frac = 1-5/dim(dat1)[1]
 seq_impute <- MetIm(sequence = dat2, microarray = dat1, lambda=0.3, cut=10, cvfold=0, use.mvalue = F, qc_frac = qc_frac)
 # seq_imputet <- MetIm(sequence = t(dat1), microarray = t(dat2), lambda=0.3, cut=10, cvfold=0, use.mvalue = F, qc_frac = qc_frac)
 
-dim(seq_impute)  ##1000  200
+dim(seq_impute)  ##992 200
 
-actual=M
-predicted=seq_impute
-se(actual, predicted)  #####compare(M,M2) ####using element-wise squared error.
+#actual=M
+#predicted=seq_impute
+#se(actual, predicted)  #####compare(M,M2) ####using element-wise squared error.
 
 
 # element-wise difference
 diff <- seq_impute-(as.matrix(M))
 total.se <- sum(sum(diff^2,na.rm=T),na.rm=T)
-total.se
+total.se  ####247381.3----49721.68
+total.se/(n*m)  ####0.25----0.25
 
+
+###############################################################################################
+######################################-----------------plot
+C=as.matrix(seq2)
+D=as.matrix(array3)
+
+ROW1 = as.numeric(rownames(C))
+ROW2 = as.numeric(rownames(D))
+COL1 = as.numeric(colnames(C))
+COL2 = as.numeric(colnames(D))
+
+ROW = sort(union(ROW1,ROW2))
+COL = sort(union(COL1,COL2))
+nrow = length(ROW)
+ncol = length(COL)
+
+C_star = matrix(NA,nrow,ncol)
+colnames(C_star) = COL
+rownames(C_star) = ROW
+D_star = C_star
+
+id1.row = match(ROW1,ROW)
+id1.col = match(COL1,COL)
+id2.row = match(ROW2,ROW)
+id2.col = match(COL2,COL)  
+
+C_star[id1.row,id1.col] = as.matrix(C)
+D_star[id2.row,id2.col] = as.matrix(D)
+
+png("simulation2.png",width=10,height=10,units="in",res=600)
+ par(mfrow=c(2,2))
+ image(C); image(C_star); image(D); image(D_star)
+dev.off()
+
+png("simulation3.png",width=10,height=10,units="in",res=600)
 par(mfrow=c(2,2))
-image(as.matrix(M))
-image(as.matrix(dat1))
-image(as.matrix(dat2))
-image(seq_impute)
+image(as.matrix(M)); image(C_star); image(D_star); image(as.matrix(seq_impute))
+dev.off()
