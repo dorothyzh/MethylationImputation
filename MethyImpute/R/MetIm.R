@@ -45,28 +45,28 @@ MetIm <- function(sequence, microarray = NULL ,lambda = NULL, use.mvalue = NULL,
     
     
     
-    ROW1 <- as.numeric(rownames(C))
-    ROW2 <- as.numeric(rownames(D))
-    COL1 <- as.numeric(colnames(C))
-    COL2 <- as.numeric(colnames(D))
+    cpg1 <- as.numeric(rownames(C))
+    cpg2 <- as.numeric(rownames(D))
+    human1 <- as.numeric(colnames(C))
+    human2 <- as.numeric(colnames(D))
     
-    ROW <- sort(union(ROW1,ROW2))
-    COL <- sort(union(COL1,COL2))
-    nrow <- length(ROW)
-    ncol <- length(COL)
+    cpg <- sort(union(cpg1,cpg2))
+    human <- sort(union(human1,human2))
+    nrow <- length(cpg)
+    ncol <- length(human)
     
     C_star <- matrix(NA,nrow,ncol)
-    colnames(C_star) <- COL
-    rownames(C_star) <- ROW
+    colnames(C_star) <- human
+    rownames(C_star) <- cpg
     D_star <- C_star
     
-    id1.row <- match(ROW1,ROW)
-    id1.col <- match(COL1,COL)
-    id2.row <- match(ROW2,ROW)
-    id2.col <- match(COL2,COL)	
+    id1.cpg <- match(cpg1,cpg)
+    id1.human <- match(human1,human)
+    id2.cpg <- match(cpg2,cpg)
+    id2.human <- match(human2,human)	
     
-    C_star[id1.row,id1.col] <- as.matrix(C)
-    D_star[id2.row,id2.col] <- as.matrix(D)
+    C_star[id1.cpg,id1.human] <- as.matrix(C)
+    D_star[id2.cpg,id2.human] <- as.matrix(D)
     
     # par(mfrow=c(2,2))
     # image(C); image(C_star); image(D); image(D_star)
