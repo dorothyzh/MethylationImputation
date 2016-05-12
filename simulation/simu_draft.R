@@ -39,23 +39,27 @@ data(dat1)
 data(dat2)
 #covariance=cov(dat2,use="pairwise.complete.obs") ###--work
 #covariance=cov(dat2,use="everything") ###work
-covariance=cov(dat2,use="complete.obs")  #######work, maybe use this one 
+means <- rowMeans(dat1, na.rm=T)
+covariance=cov(t(dat1),use="pairwise.complete.obs")  #######work, maybe use this one 
 #covariance=cov(dat2,use="na.or.complete") ###work 
 dim(covariance)
 
+covariance[is.na(covariance)] = 0
+ridge = 1e-3
+diag(covariance) <- diag(covariance)+ridge
 
-n = dim(covariance)[1]
+n = dim(dat2)[2]
 n.seq = 0.1*n
-m = 200
+m = dim(covariance)[1]
 m.array = 0.1*m
 Epsilon1=.1
 Epsilon2=.1
 s=1.05
 t=0.05
 #M <- mvrnorm(m, mu = rep(0, n), Sigma = diag(n)*var_a) ####can run
-M <- mvrnorm(m, mu = rep(0, n), Sigma = covariance) 
+M <- mvrnorm(n, mu = means, Sigma = covariance) 
 
-M=t(M)
+# M=t(M)
 dim(M)  # 992 200
 
 M <- data.frame(M)
@@ -118,6 +122,11 @@ total.se <- sum(sum(diff^2,na.rm=T),na.rm=T)
 total.se  ####247381.3----49721.68
 total.se/(n*m)  ####0.25----0.25
 
+seq_impute1=Beta2M(seq_impute)
+diff <- seq_impute1-(as.matrix(M))
+total.se <- sum(sum(diff^2,na.rm=T),na.rm=T)
+total.se  ####247381.3----49721.68
+total.se/(n*m)  ####0.25----0.25
 
 ###############################################################################################
 ######################################-----------------plot
@@ -154,5 +163,8 @@ dev.off()
 
 png("simulation3.png",width=10,height=10,units="in",res=600)
 par(mfrow=c(2,2))
-image(as.matrix(M)); image(C_star); image(D_star); image(as.matrix(seq_impute))
+image(as.matrix(t(M)),main="M"); 
+image(t(C_star),main="sequence"); 
+image(t(D_star),main="array"); 
+image(as.matrix(t(seq_impute1)),main=paste("seq_impute", total.se/(n*m)))
 dev.off()
