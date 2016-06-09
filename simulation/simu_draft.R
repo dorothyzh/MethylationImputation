@@ -37,6 +37,9 @@ Beta_M <- function(data,...){
 ######################################-----------------simulation
 data(dat1)
 data(dat2)
+
+dat1=dat1*0.99+0.005
+dat1=Beta2M(dat1)
 #covariance=cov(dat2,use="pairwise.complete.obs") ###--work
 #covariance=cov(dat2,use="everything") ###work
 means <- rowMeans(dat1, na.rm=T)
@@ -45,7 +48,7 @@ covariance=cov(t(dat1),use="pairwise.complete.obs")  #######work, maybe use this
 dim(covariance)
 
 covariance[is.na(covariance)] = 0
-ridge = 1e-3
+ridge = 10
 diag(covariance) <- diag(covariance)+ridge
 
 n = dim(dat2)[2]
@@ -117,11 +120,6 @@ dim(seq_impute)  ##992 200
 
 
 # element-wise difference
-diff <- seq_impute-(as.matrix(M))
-total.se <- sum(sum(diff^2,na.rm=T),na.rm=T)
-total.se  ####247381.3----49721.68
-total.se/(n*m)  ####0.25----0.25
-
 seq_impute1=Beta2M(seq_impute)
 diff <- seq_impute1-(as.matrix(M))
 total.se <- sum(sum(diff^2,na.rm=T),na.rm=T)
@@ -166,5 +164,29 @@ par(mfrow=c(2,2))
 image(as.matrix(t(M)),main="M"); 
 image(t(C_star),main="sequence"); 
 image(t(D_star),main="array"); 
-image(as.matrix(t(seq_impute1)),main=paste("seq_impute", total.se/(n*m)))
+image(as.matrix(t(seq_impute1)),main=paste("Reconstruction by mimpute with MEE:", sprintf("%.4f", total.se/(n*m))))
 dev.off()
+
+# vCpG
+CpG_var = sapply(M, var)
+vCpG <- CpG_var > 0.005;
+vCpG <- CpG_var > 12;
+# diff <- seq_impute1-(as.matrix(M))
+total.vCpG.se <- sum(sum(diff[,vCpG]^2,na.rm=T),na.rm=T)
+total.vCpG.se  ####247381.3----49721.68
+total.vCpG.se/(n*sum(vCpG, na.rm=T))  ####0.25----0.25
+
+# R2
+r2 = sapply(1:length(vCpG), function(i){ 
+  if (!is.na(vCpG[i]) && vCpG[i]) {
+  cor(M[,i],seq_impute1[,i])^2
+  }
+  }
+  )
+
+unlist(r2)
+a=M[,!is.na(vCpG) & vCpG]
+
+plot(M[,"68606703"], seq_impute1[,"68606703"])
+
+plot(M[,77], seq_impute1[,77])
