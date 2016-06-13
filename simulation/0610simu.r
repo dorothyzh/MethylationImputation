@@ -47,6 +47,8 @@ dat1=dat1[,-which(na_count>100)]
 length(na_count)
 dim(dat1)  #124 153
 #dat1_1=impute.knn(dat1,colmax=1,rowmax=1,maxp=nrow(dat1)*length(dat1)) #An expression matrix with genes in the rows, samples in the columns
+
+####imputation
 dat1_1=mice(as.matrix(dat1),m=1,maxit=1,meth='sample',seed=500)
 dat1=complete(dat1_1)
 
